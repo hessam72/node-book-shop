@@ -1,4 +1,4 @@
 # node-book-shop
-Courseera bookshop assignment
+Coursera bookshop assignment
 CRUD operations on books model
 Useing expressjs - mongodb - jwt - RESTApi
