@@ -5,7 +5,7 @@ Useing expressjs - mongodb - jwt - RESTApi
 
 Follow bellow steps to run the application
 <br/>
-1- create an account in mongodb.com and login
+1- create an account in <a href="mongodb.com">mongodb.com</a> and login
 <br/>
 2- create a database with two tabels of "books" and "users"
 <br/>
@@ -15,6 +15,7 @@ Follow bellow steps to run the application
 <br/>
 5- make a POST api call to route: your-local-url/books/insert_all 
 <br/>
+6- finaly run <code>npm run serve</code>
 
 That's it, now you can use the endpoints!
 
