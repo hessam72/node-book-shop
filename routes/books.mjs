@@ -1,34 +1,90 @@
 import express from "express";
 import db from "../db/conn.mjs";
-import { ObjectId } from "mongodb";
 import books from "../db/books.js";
 
 const router = express.Router();
 
-// Get a list of 50  books
+
+
+// Get the list of available books stored in mongodb
 router.get("/", async (req, res) => {
-  let collection = await db.collection("comments");
-  let results = await collection.find({}).limit(50).toArray();
-
-  res.send(results).status(200);
-});
-
-// Fetches the latest  books
-router.get("/latest", async (req, res) => {
+  // connect to db
   let collection = await db.collection("books");
-  let results = await collection
-    .aggregate([
-      { $project: { author: 1, title: 1, tags: 1, date: 1 } },
-      { $sort: { date: -1 } },
-      { $limit: 3 },
-    ])
-    .toArray();
+  // get all results
+  let results = await collection.find({}).toArray();
+
   res.send(results).status(200);
 });
 
-// insert all of local json books data to mongodb 
+
+
+// get book based on ISBN
+router.get("/:isbn", async (req, res) => {
+  let collection = await db.collection("books");
+  let result = await collection.findOne({ ISBN: req.params.isbn });
+  if (!result) res.send("Not found").status(404);
+  else res.send(result).status(200);
+});
+
+// get all books by author
+router.get("/author/:name", async (req, res) => {
+  let collection = await db.collection("books");
+  let value = req.params.name;
+  // using find only look for exact match and if a book has multiple authors it won't be fetch
+  // by using $regex to get all records that has an author by given name
+  let result = await collection.find({ author: { $regex: value } }).toArray();
+  if (!result) res.send("Not found").status(404);
+  else res.send(result).status(200);
+});
+
+// get all books by title
+router.get("/title/:title", async (req, res) => {
+  let collection = await db.collection("books");
+  let title = req.params.title;
+
+  let result = await collection.find({ title: { $regex: title } }).toArray();
+  if (!result) res.send("Not found").status(404);
+  else res.send(result).status(200);
+});
+
+// get book review with ISBN as book id
+router.get("/:isbn/reviews", async (req, res) => {
+  let collection = await db.collection("books");
+  let book = await collection.findOne({ ISBN: req.params.isbn });
+  let reviews = book.reviews;
+  if (!reviews) res.send("No review found").status(404);
+  else res.send(reviews).status(200);
+});
+
+// search in books by title - author - ISBN
+router.post("/search", async (req, res) => {
+  let collection = await db.collection("books");
+  const title = req.body.title;
+  const author = req.body.author;
+  const ISBN = req.body.isbn;
+
+  if (!title && !author && !ISBN) {
+    return res
+      .status(422)
+      .json({ message: "At least one field is required for the search" });
+  }
+
+  let results = await collection
+    .find({ ISBN: {$regex: ISBN}, title: { $regex: title }, author: { $regex: author } })
+    .toArray();
+
+  if (!results) res.send("No Results Found").status(404);
+  else res.send(results).status(200);
+});
+
+
+
+
+
+
+// insert all of local json books data to mongodb
 // also can be used as reseting stored data
-router.get("/insert_all", async (req, res) => {
+router.post("/insert_all", async (req, res) => {
   let collection = await db.collection("books");
 
   books.forEach((book) => {
@@ -37,49 +93,6 @@ router.get("/insert_all", async (req, res) => {
 
   let result = await collection.insertMany(books);
   res.send(result).status(204);
-});
-
-// Get a single post
-
-router.get("/:id", async (req, res) => {
-  let collection = await db.collection("books");
-  let query = { _id: ObjectId(req.params.id) };
-  let result = await collection.findOne(query);
-
-  if (!result) res.send("Not found").status(404);
-  else res.send(result).status(200);
-});
-
-// Add a new document to the collection
-router.post("/", async (req, res) => {
-  let collection = await db.collection("books");
-  let newDocument = req.body;
-  newDocument.date = new Date();
-  let result = await collection.insertOne(newDocument);
-  res.send(result).status(204);
-});
-
-// Update the book with a new comment
-router.patch("/review/:id", async (req, res) => {
-  const query = { _id: ObjectId(req.params.id) };
-  const updates = {
-    $push: { comments: req.body },
-  };
-
-  let collection = await db.collection("books");
-  let result = await collection.updateOne(query, updates);
-
-  res.send(result).status(200);
-});
-
-// Delete an entry
-router.delete("/:id", async (req, res) => {
-  const query = { _id: ObjectId(req.params.id) };
-
-  const collection = db.collection("books");
-  let result = await collection.deleteOne(query);
-
-  res.send(result).status(200);
 });
 
 export default router;

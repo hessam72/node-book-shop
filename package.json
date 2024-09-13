@@ -4,7 +4,7 @@
   "description": "The coursera assigment",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon server.mjs",
+    "serve": "nodemon server.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
